@@ -1,5 +1,8 @@
 # 🔹 Node modules (VERY IMPORTANT)
 node_modules/
+.env
+frontend/.angular/
+dist/
 
 # 🔹 Build folders
 dist/
