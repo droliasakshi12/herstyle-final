@@ -1,0 +1,82 @@
+const express = require('express');
+const router = express.Router();
+const Order = require('../models/Order');
+const Product = require('../models/Product');
+
+// GET all orders (admin)
+router.get('/', async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }).lean();
+    const data = orders.map(o => ({ ...o, id: o._id }));
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET single order
+router.get('/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).lean();
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    res.json({ success: true, data: { ...order, id: order._id } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST place order
+router.post('/', async (req, res) => {
+  try {
+    const { customer_name, customer_email, customer_phone, shipping_address, items, total_amount } = req.body;
+    if (!customer_name || !customer_email || !shipping_address) {
+      return res.status(400).json({ success: false, message: 'Name, email and address are required' });
+    }
+    if (!items || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one item required' });
+    }
+
+    // Enrich items with product names
+    const enrichedItems = await Promise.all(items.map(async item => {
+      const product = await Product.findById(item.product_id).lean();
+      return { ...item, name: product ? product.name : '' };
+    }));
+
+    const order = await Order.create({
+      customer_name, customer_email,
+      customer_phone: customer_phone || '',
+      shipping_address, total_amount,
+      items: enrichedItems
+    });
+
+    res.status(201).json({ success: true, message: 'Order placed!', orderId: order._id });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT update order status
+router.put('/:id/status', async (req, res) => {
+  try {
+    const valid = ['pending','processing','shipped','delivered','cancelled'];
+    if (!valid.includes(req.body.status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+    await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
+    res.json({ success: true, message: 'Status updated' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE order
+router.delete('/:id', async (req, res) => {
+  try {
+    await Order.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Order deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+module.exports = router;
