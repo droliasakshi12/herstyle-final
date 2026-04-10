@@ -21,7 +21,12 @@ import { Subscription } from 'rxjs';
           <li><a routerLink="/products" routerLinkActive="active">Shop</a></li>
           <li><a routerLink="/about" routerLinkActive="active">About</a></li>
           <li><a routerLink="/contact" routerLinkActive="active">Contact</a></li>
-          <li><a routerLink="/admin" routerLinkActive="active" class="admin-link">Admin</a></li>
+          @if (auth.isLoggedIn()) {
+            <li><a routerLink="/my-orders" routerLinkActive="active">My Orders</a></li>
+          }
+          @if (auth.isAdmin()) {
+            <li><a routerLink="/admin" routerLinkActive="active" class="admin-link">Admin</a></li>
+          }
         </ul>
 
         <div class="nav-icons">
@@ -50,15 +55,16 @@ import { Subscription } from 'rxjs';
                 }
               </div>
               @if (userMenuOpen) {
-                <div class="user-dropdown" (click)="$event.stopPropagation()">
-                  <div class="user-dropdown-header">
-                    <strong>{{ auth.user()?.name }}</strong>
-                    <span>{{ auth.user()?.email }}</span>
-                    @if (auth.isAdmin()) { <span class="role-badge">Admin</span> }
-                  </div>
-                  @if (auth.isAdmin()) {
-                    <a routerLink="/admin" class="dropdown-item" (click)="userMenuOpen=false">Admin Panel</a>
-                  }
+                  <div class="user-dropdown" (click)="$event.stopPropagation()">
+                    <div class="user-dropdown-header">
+                      <strong>{{ auth.user()?.name }}</strong>
+                      <span>{{ auth.user()?.email }}</span>
+                      @if (auth.isAdmin()) { <span class="role-badge">Admin</span> }
+                    </div>
+                    <a routerLink="/my-orders" class="dropdown-item" (click)="userMenuOpen=false">🛍️ My Orders</a>
+                    @if (auth.isAdmin()) {
+                      <a routerLink="/admin" class="dropdown-item" (click)="userMenuOpen=false">Admin Panel</a>
+                    }
                   <button class="dropdown-item logout-btn" (click)="logout()">🚪 Sign Out</button>
                 </div>
               }
@@ -122,7 +128,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private cartService: CartService,
     private wishlistService: WishlistService,
     public auth: AuthService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.subs.push(this.cartService.cartCount$.subscribe(n => this.cartCount = n));

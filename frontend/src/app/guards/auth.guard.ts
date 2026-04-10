@@ -14,7 +14,6 @@ export const adminGuard: CanActivateFn = () => {
   const auth   = inject(AuthService);
   const router = inject(Router);
   if (auth.isAdmin()) return true;
-  alert('You must be signed in as an Admin to access this page.');
-  router.navigate(['/login']);
+  router.navigate(['/']);
   return false;
 };

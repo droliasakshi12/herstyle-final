@@ -5,8 +5,20 @@ const connectDB = require('./db');
 
 const app = express();
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200,http://localhost:3000').split(',');
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(o => o);
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow any localhost origins in development, otherwise check against ALLOWED_ORIGINS
+    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      callback(null, true);
+    } else if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

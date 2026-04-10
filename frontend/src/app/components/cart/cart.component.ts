@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../services/cart.service';
-import { CartItem } from '../../models/product.model';
+import { AuthService } from '../../services/auth.service';
+import { ReceiptService } from '../../services/receipt.service';
+import { environment } from '../../../environments/environment';
+import { CartItem, ApiResponse } from '../../models/product.model';
 
 @Component({
   selector: 'app-cart',
@@ -24,49 +27,64 @@ import { CartItem } from '../../models/product.model';
           <div class="center-state"><div class="spin"></div><p>Loading bag…</p></div>
         }
 
-        @if (!loading && cartItems.length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">🛍️</div>
-            <h2>Your bag is empty</h2>
-            <p>Add some gorgeous pieces!</p>
-            <a routerLink="/products" class="btn-primary">Browse Products</a>
-          </div>
-        }
-
-        @if (!loading && cartItems.length > 0) {
+        @if (!loading) {
           <div class="cart-layout">
             <div class="items-col">
-              @for (item of cartItems; track item.id) {
-                <div class="cart-item">
-                  <img [src]="item.image_url || 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&q=80'" [alt]="item.name" />
-                  <div class="item-info">
-                    <h3>{{ item.name }}</h3>
-                    <p class="item-sub">
-                      @if (item.size) { <span>Size: {{ item.size }}</span> }
-                      @if (item.color) { <span> · {{ item.color }}</span> }
-                    </p>
-                    <span class="item-price">₹{{ item.price | number:'1.0-0' }}</span>
-                  </div>
-                  <div class="qty-control">
-                    <button (click)="dec(item)">−</button>
-                    <span>{{ item.quantity }}</span>
-                    <button (click)="inc(item)">+</button>
-                  </div>
-                  <span class="item-total">₹{{ ((item.price ?? 0) * item.quantity) | number:'1.0-0' }}</span>
-                  <button class="remove-btn" (click)="remove(item.id ?? '')" title="Remove">✕</button>
+              @if (cartItems.length === 0) {
+                <div class="empty-state">
+                  <div class="empty-icon">🛍️</div>
+                  <h2>Your bag is empty</h2>
+                  <p>Add some gorgeous pieces!</p>
+                  <a routerLink="/products" class="btn-primary">Browse Products</a>
                 </div>
+              } @else {
+                @for (item of cartItems; track item.id) {
+                  <div class="cart-item">
+                    <img [src]="item.image_url || 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&q=80'" [alt]="item.name" />
+                    <div class="item-info">
+                      <h3>{{ item.name }}</h3>
+                      <p class="item-sub">
+                        @if (item.size) { <span>Size: {{ item.size }}</span> }
+                        @if (item.color) { <span> · {{ item.color }}</span> }
+                      </p>
+                      <span class="item-price">₹{{ item.price | number:'1.0-0' }}</span>
+                    </div>
+                    <div class="qty-control">
+                      <button (click)="dec(item)">−</button>
+                      <span>{{ item.quantity }}</span>
+                      <button (click)="inc(item)">+</button>
+                    </div>
+                    <span class="item-total">₹{{ ((item.price ?? 0) * item.quantity) | number:'1.0-0' }}</span>
+                    <button class="remove-btn" (click)="remove(item.id ?? '')" title="Remove">✕</button>
+                  </div>
+                }
+                <button class="clear-all-btn" (click)="clearCart()">🗑 Clear Entire Bag</button>
               }
-              <button class="clear-all-btn" (click)="clearCart()">🗑 Clear Entire Bag</button>
             </div>
 
             <div class="summary-col">
               <h2>Order Summary</h2>
+              @if (cartItems.length > 0) {
+                <div class="summary-items">
+                  @for (item of cartItems; track item.id) {
+                    <div class="si-row">
+                      <img [src]="item.image_url || 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=60&q=80'" [alt]="item.name" class="si-img" />
+                      <div class="si-info">
+                        <span class="si-name">{{ item.name }}</span>
+                        <span class="si-meta">Qty: {{ item.quantity }}{{ item.size ? ' · ' + item.size : '' }}</span>
+                      </div>
+                      <span class="si-price">₹{{ ((item.price ?? 0) * item.quantity) | number:'1.0-0' }}</span>
+                    </div>
+                  }
+                </div>
+                <div class="divider"></div>
+              }
               <div class="sum-row"><span>Subtotal ({{ totalItems }} items)</span><strong>₹{{ subtotal | number:'1.0-0' }}</strong></div>
               <div class="sum-row"><span>Delivery</span><strong [class.free]="subtotal >= 999">{{ subtotal >= 999 ? 'FREE' : '₹99' }}</strong></div>
-              @if (subtotal >= 999) { <p class="free-note">🎉 You qualify for free delivery!</p> }
+              @if (subtotal >= 999) { <p class="free-note">🎉 Free delivery applied!</p> }
               <div class="divider"></div>
               <div class="sum-row total"><span>Total</span><strong>₹{{ totalAmt | number:'1.0-0' }}</strong></div>
-              <button class="btn-checkout" (click)="showCheckout = true">Checkout →</button>
+              <button class="btn-checkout" (click)="showCheckout = true" [disabled]="cartItems.length === 0">Proceed to Checkout →</button>
             </div>
           </div>
         }
@@ -77,21 +95,52 @@ import { CartItem } from '../../models/product.model';
       <div class="overlay" (click)="showCheckout = false">
         <div class="modal" (click)="$event.stopPropagation()">
           <button class="modal-x" (click)="showCheckout = false">✕</button>
-          <h2>Complete Order</h2>
+          <h2>Complete Your Order</h2>
+          <div class="checkout-summary">
+            @for (item of cartItems; track item.id) {
+              <div class="cs-item-row">
+                <span class="cs-item-name">{{ item.name }} <em>x{{ item.quantity }}</em></span>
+                <span>₹{{ ((item.price ?? 0) * item.quantity) | number:'1.0-0' }}</span>
+              </div>
+            }
+            <div class="cs-divider"></div>
+            <div class="cs-row"><span>Subtotal</span><strong>₹{{ subtotal | number:'1.0-0' }}</strong></div>
+            <div class="cs-row"><span>Delivery</span><strong [class.free]="subtotal >= 999">{{ subtotal >= 999 ? 'FREE' : '₹99' }}</strong></div>
+            <div class="cs-divider"></div>
+            <div class="cs-row total"><span>Total Payable</span><strong>₹{{ totalAmt | number:'1.0-0' }}</strong></div>
+          </div>
           <div class="field"><label>Full Name *</label><input [(ngModel)]="order.customer_name" placeholder="Your name" /></div>
           <div class="field"><label>Email *</label><input type="email" [(ngModel)]="order.customer_email" placeholder="email@example.com" /></div>
           <div class="field"><label>Phone</label><input type="tel" [(ngModel)]="order.customer_phone" placeholder="+91 9999999999" /></div>
           <div class="field"><label>Delivery Address *</label><textarea [(ngModel)]="order.shipping_address" rows="3" placeholder="Street, City, PIN"></textarea></div>
-          <div class="order-total">Total: ₹{{ totalAmt | number:'1.0-0' }}</div>
           <button class="btn-place" (click)="placeOrder()" [disabled]="placing">{{ placing ? 'Placing…' : 'Place Order ✓' }}</button>
         </div>
       </div>
     }
 
     @if (toast) { <div class="toast" [class.err]="toastErr">{{ toast }}</div> }
+
+    <!-- ORDER CONFIRMED SCREEN -->
+    @if (placedOrderId) {
+      <div class="overlay">
+        <div class="modal confirmed-modal">
+          <div class="confirmed-icon">🎉</div>
+          <h2>Order Confirmed!</h2>
+          <p>Your order has been placed successfully.</p>
+          <div class="order-ref">
+            <span>Order ID</span>
+            <code>{{ placedOrderId }}</code>
+          </div>
+          <p class="track-hint">Save your Order ID to track delivery status.</p>
+          <button (click)="downloadReceipt()" class="btn-receipt-success">📄 Download Receipt</button>
+          <a [routerLink]="['/track', placedOrderId]" class="btn-track">Track My Order →</a>
+          <button class="btn-continue" (click)="placedOrderId = ''" routerLink="/products">Continue Shopping</button>
+        </div>
+      </div>
+    }
   `,
   styles: [`
-    :host { --brown:#8B6847; --brown-dark:#6B4F33; --brown-light:#C4A882; --beige:#F5EFE6; --beige-card:#FAF6F0; --beige-border:#E8DDD0; --ink:#4A3728; --muted:#9C8877; --ink:#4A3728; --beige:#F5EFE6; display:block; font-family:'Jost',sans-serif; background:var(--beige); min-height:100vh; }
+    :host { --brown:#8B6847; --brown-dark:#6B4F33; --brown-light:#C4A882; --beige:#F5EFE6; --beige-card:#FAF6F0; --beige-border:#E8DDD0; --ink:#4A3728; --muted:#9C8877; display:block; font-family:'Jost',sans-serif; background:var(--beige); min-height:100vh; }
     .page { padding:40px 20px; }
     .wrap { max-width:1100px; margin:0 auto; }
     .page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; }
@@ -131,7 +180,26 @@ import { CartItem } from '../../models/product.model';
     .divider { border:none; border-top:1px solid #EDE3D4; margin:16px 0; }
     .sum-row.total span,.sum-row.total strong { color:var(--ink); font-size:1.1rem; font-weight:700; }
     .btn-checkout { width:100%; padding:14px; background:var(--brown); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem; margin-top:8px; transition:background 0.2s; }
-    .btn-checkout:hover { background:#6B4F33; }
+    .btn-checkout:hover:not(:disabled) { background:#6B4F33; }
+    .btn-checkout:disabled { opacity:0.4; cursor:not-allowed; }
+    /* Summary mini product list */
+    .summary-items { display:flex; flex-direction:column; gap:10px; margin-bottom:4px; }
+    .si-row { display:flex; align-items:center; gap:10px; }
+    .si-img { width:40px; height:40px; object-fit:cover; border-radius:6px; flex-shrink:0; }
+    .si-info { flex:1; min-width:0; }
+    .si-name { display:block; font-size:0.82rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .si-meta { display:block; font-size:0.72rem; color:#999; }
+    .si-price { font-size:0.82rem; font-weight:700; color:var(--brown); flex-shrink:0; }
+    /* Checkout modal summary */
+    .checkout-summary { background:#FAF6F0; border-radius:10px; padding:16px; margin-bottom:20px; }
+    .cs-item-row { display:flex; justify-content:space-between; align-items:center; font-size:0.84rem; color:var(--ink); margin-bottom:8px; }
+    .cs-item-name { flex:1; margin-right:10px; }
+    .cs-item-name em { font-style:normal; color:#999; font-size:0.78rem; }
+    .cs-row { display:flex; justify-content:space-between; font-size:0.85rem; color:#555; margin-bottom:6px; }
+    .cs-row.total span,.cs-row.total strong { font-size:1rem; font-weight:700; color:var(--brown); }
+    .cs-row strong.free { color:#2e7d32; }
+    .cs-divider { border:none; border-top:1px solid #E8DDD0; margin:10px 0; }
+
     .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:10000; padding:20px; }
     .modal { background:white; border-radius:14px; padding:32px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; position:relative; }
     .modal-x { position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.1rem; color:#aaa; cursor:pointer; }
@@ -147,6 +215,21 @@ import { CartItem } from '../../models/product.model';
     .toast { position:fixed; bottom:28px; right:28px; background:var(--ink); color:white; padding:12px 22px; border-radius:8px; font-size:0.88rem; z-index:99999; animation:fadeUp 0.3s ease; }
     .toast.err { background:#c0392b; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;} }
+    /* Confirmed modal */
+    .confirmed-modal { text-align:center; }
+    .confirmed-icon { font-size:3.5rem; margin-bottom:12px; }
+    .confirmed-modal h2 { font-family:'Cormorant Garamond',Georgia,serif; color:var(--ink); margin:0 0 8px; }
+    .confirmed-modal > p { color:#9C8877; font-size:0.88rem; margin:0 0 20px; }
+    .order-ref { background:#FAF6F0; border-radius:10px; padding:16px; margin-bottom:12px; }
+    .order-ref span { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:#9C8877; margin-bottom:6px; }
+    .order-ref code { font-size:0.78rem; word-break:break-all; color:var(--brown); font-weight:700; background:none; }
+    .track-hint { font-size:0.8rem; color:#9C8877; margin:0 0 20px; }
+    .btn-track { display:block; width:100%; padding:13px; background:var(--brown); color:white; border-radius:8px; text-decoration:none; font-weight:700; font-size:0.92rem; margin-bottom:10px; transition:background 0.2s; }
+    .btn-track:hover { background:var(--brown-dark); }
+    .btn-receipt-success { display:block; width:100%; padding:13px; background:#FAF6F0; color:var(--ink); border:1.5px solid var(--beige-border); border-radius:8px; cursor:pointer; font-weight:700; font-size:0.92rem; margin-bottom:10px; transition:all 0.2s; font-family:inherit; }
+    .btn-receipt-success:hover { border-color:var(--brown); color:var(--brown); }
+    .btn-continue { display:block; width:100%; padding:11px; background:none; border:1.5px solid var(--beige-border); color:var(--ink); border-radius:8px; cursor:pointer; font-family:inherit; font-size:0.88rem; transition:all 0.2s; }
+    .btn-continue:hover { border-color:var(--brown); color:var(--brown); }
     @media(max-width:768px) { .cart-layout { grid-template-columns:1fr; } }
   `]
 })
@@ -155,11 +238,24 @@ export class CartComponent implements OnInit {
   loading = true;
   showCheckout = false;
   placing = false;
+  placedOrderId = '';
+  placedOrderFull: any = null;
   toast = ''; toastErr = false;
   order = { customer_name:'', customer_email:'', customer_phone:'', shipping_address:'' };
 
-  constructor(private cartService: CartService) {}
-  ngOnInit() { this.load(); }
+  constructor(
+    private cartService: CartService, 
+    private auth: AuthService,
+    private receiptService: ReceiptService
+  ) {}
+  ngOnInit() {
+    this.load();
+    const user = this.auth.user();
+    if (user) {
+      this.order.customer_name = user.name;
+      this.order.customer_email = user.email;
+    }
+  }
 
   load() {
     this.loading = true;
@@ -211,7 +307,7 @@ export class CartComponent implements OnInit {
         price: i.price
       }))
     };
-    fetch('http://localhost:3000/api/orders', {
+    fetch(`${environment.apiUrl}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -222,13 +318,20 @@ export class CartComponent implements OnInit {
           this.showCheckout = false;
           this.cartService.clearCart().subscribe();
           this.cartItems = [];
-          this.showToast('🎉 Order placed! Thank you!');
+          this.placedOrderId = res.orderId;
+          this.placedOrderFull = { ...payload, _id: res.orderId, createdAt: new Date(), status: 'pending' };
         } else {
           this.showToast(res.message || 'Order failed', true);
         }
         this.placing = false;
       })
       .catch(() => { this.showToast('Order failed', true); this.placing = false; });
+  }
+
+  downloadReceipt() {
+    if (this.placedOrderFull) {
+      this.receiptService.generateReceipt(this.placedOrderFull);
+    }
   }
 
   showToast(msg: string, err = false) {

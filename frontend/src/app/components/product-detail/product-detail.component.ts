@@ -4,6 +4,7 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
+import { WishlistService } from '../../services/wishlist.service';
 import { AuthService } from '../../services/auth.service';
 import { Product } from '../../models/product.model';
 
@@ -79,7 +80,9 @@ import { Product } from '../../models/product.model';
               </div>
               <div class="cta-buttons">
                 <button class="btn-add-cart" (click)="addToCart()">🛍 Add to Cart</button>
-                <button class="btn-wishlist">♡ Wishlist</button>
+                <button class="btn-wishlist" [class.active]="wishlistService.isWishlisted(product.id || product._id || '')" (click)="toggleWishlist()">
+                  {{ wishlistService.isWishlisted(product.id || product._id || '') ? '♥ Wishlisted' : '♡ Wishlist' }}
+                </button>
               </div>
               <div class="product-features">
                 <div class="feature">🚚 Free delivery on orders above ₹999</div>
@@ -138,6 +141,7 @@ import { Product } from '../../models/product.model';
     .btn-add-cart:hover { background:#b04a5a; }
     .btn-wishlist { flex:1; padding:16px; background:white; color:#8B6847; border:2px solid #8B6847; border-radius:12px; cursor:pointer; font-size:0.95rem; font-weight:600; transition:all 0.2s; }
     .btn-wishlist:hover { background:#F0E8DC; }
+    .btn-wishlist.active { background:#8B6847; color:white; }
     .product-features { display:flex; flex-direction:column; gap:10px; }
     .feature { font-size:0.85rem; color:#555; padding:10px 14px; background:#FAF6F0; border-radius:8px; }
     .toast { position:fixed; bottom:30px; right:30px; background:#4A3728; color:white; padding:14px 24px; border-radius:10px; font-size:0.9rem; z-index:9999; }
@@ -157,6 +161,7 @@ export class ProductDetailComponent implements OnInit {
   constructor(
     private productService: ProductService, 
     private cartService: CartService, 
+    public wishlistService: WishlistService,
     private authService: AuthService,
     private route: ActivatedRoute
   ) {}
@@ -199,6 +204,12 @@ export class ProductDetailComponent implements OnInit {
       next: () => this.showToast(this.product!.name + ' added to cart! 🛍'),
       error: () => this.showToast('Failed to add to cart', true)
     });
+  }
+
+  toggleWishlist(): void {
+    if (!this.product) return;
+    const added = this.wishlistService.toggle(this.product);
+    this.showToast(added ? 'Added to wishlist ♥' : 'Removed from wishlist');
   }
 
   showToast(msg: string, error = false): void { this.toastMessage = msg; this.toastError = error; setTimeout(() => this.toastMessage = '', 3000); }

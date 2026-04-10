@@ -11,6 +11,10 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending','processing','shipped','delivered','cancelled'],
     default: 'pending'
   },
+  statusHistory: [{
+    status: String,
+    updatedAt: { type: Date, default: Date.now }
+  }],
   items: [{
     product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     name:       String,

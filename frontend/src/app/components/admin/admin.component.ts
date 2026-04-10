@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Product, Category } from '../../models/product.model';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin',
@@ -386,7 +387,7 @@ export class AdminComponent implements OnInit {
   }
 
   loadOrders() {
-    fetch('http://localhost:3000/api/orders')
+    fetch(`${environment.apiUrl}/orders`)
       .then(r => r.json())
       .then(res => { if (res.success) this.orders = res.data; })
       .catch(() => this.showToast('Failed to load orders', true));
@@ -518,7 +519,7 @@ export class AdminComponent implements OnInit {
 
   // ── ORDERS ────────────────────────────────────────────────────────
   updateOrderStatus(orderId: string, status: string) {
-    fetch('http://localhost:3000/api/orders/' + orderId + '/status', {
+    fetch(`${environment.apiUrl}/orders/${orderId}/status`, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status })
     }).then(r => r.json())
       .then((res: any) => { if (res.success) this.showToast('Order updated to: ' + status); })
