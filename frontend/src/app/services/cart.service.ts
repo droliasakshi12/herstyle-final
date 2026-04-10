@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 import { CartItem, ApiResponse } from '../models/product.model';
 
 export interface CartResponse {
@@ -18,7 +19,7 @@ export class CartService {
   cartCount$ = this.cartCountSubject.asObservable();
   private sessionId: string;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private authService: AuthService) {
     const stored = localStorage.getItem('herstyle_session');
     this.sessionId = stored ?? this.generateSession();
     localStorage.setItem('herstyle_session', this.sessionId);
@@ -32,27 +33,32 @@ export class CartService {
   getSessionId(): string { return this.sessionId; }
 
   getCart(): Observable<CartResponse> {
-    return this.http.get<CartResponse>(`${this.apiUrl}/cart/${this.sessionId}`);
+    const headers = this.authService.getAuthHeader() as any;
+    return this.http.get<CartResponse>(`${this.apiUrl}/cart/${this.sessionId}`, { headers });
   }
 
   addToCart(item: Partial<CartItem>): Observable<ApiResponse<null>> {
+    const headers = this.authService.getAuthHeader() as any;
     return this.http.post<ApiResponse<null>>(`${this.apiUrl}/cart`, {
       ...item,
       session_id: this.sessionId
-    }).pipe(tap(() => this.refreshCount()));
+    }, { headers }).pipe(tap(() => this.refreshCount()));
   }
 
   updateQuantity(cartItemId: string, quantity: number): Observable<ApiResponse<null>> {
-    return this.http.put<ApiResponse<null>>(`${this.apiUrl}/cart/${cartItemId}`, { quantity });
+    const headers = this.authService.getAuthHeader() as any;
+    return this.http.put<ApiResponse<null>>(`${this.apiUrl}/cart/${cartItemId}`, { quantity }, { headers });
   }
 
   removeFromCart(cartItemId: string): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/cart/${cartItemId}`)
+    const headers = this.authService.getAuthHeader() as any;
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/cart/${cartItemId}`, { headers })
       .pipe(tap(() => this.refreshCount()));
   }
 
   clearCart(): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/cart/clear/${this.sessionId}`)
+    const headers = this.authService.getAuthHeader() as any;
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/cart/clear/${this.sessionId}`, { headers })
       .pipe(tap(() => this.cartCountSubject.next(0)));
   }
 

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const { authMiddleware } = require('../middleware/auth');
 
 // GET cart by session — MUST be before /:id routes
 router.get('/session/:sessionId', async (req, res) => {
@@ -54,7 +55,7 @@ router.get('/:sessionId', async (req, res) => {
 });
 
 // POST add to cart
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { product_id, quantity = 1, size = 'M', color = '', session_id } = req.body;
     if (!product_id || !session_id) {

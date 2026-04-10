@@ -16,15 +16,12 @@ import { Subscription } from 'rxjs';
         <a routerLink="/" class="logo">
           <img src="/logo.png" alt="HerStyle" class="logo-img" />
         </a>
-
         <ul class="nav-links" [class.open]="menuOpen">
           <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
           <li><a routerLink="/products" routerLinkActive="active">Shop</a></li>
           <li><a routerLink="/about" routerLinkActive="active">About</a></li>
           <li><a routerLink="/contact" routerLinkActive="active">Contact</a></li>
-          @if (auth.isAdmin()) {
-            <li><a routerLink="/admin" routerLinkActive="active" class="admin-link">Admin ⚙️</a></li>
-          }
+          <li><a routerLink="/admin" routerLinkActive="active" class="admin-link">Admin</a></li>
         </ul>
 
         <div class="nav-icons">
@@ -60,7 +57,7 @@ import { Subscription } from 'rxjs';
                     @if (auth.isAdmin()) { <span class="role-badge">Admin</span> }
                   </div>
                   @if (auth.isAdmin()) {
-                    <a routerLink="/admin" class="dropdown-item" (click)="userMenuOpen=false">⚙️ Admin Panel</a>
+                    <a routerLink="/admin" class="dropdown-item" (click)="userMenuOpen=false">Admin Panel</a>
                   }
                   <button class="dropdown-item logout-btn" (click)="logout()">🚪 Sign Out</button>
                 </div>

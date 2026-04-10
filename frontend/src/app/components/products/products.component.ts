@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
 import { WishlistService } from '../../services/wishlist.service';
+import { AuthService } from '../../services/auth.service';
 import { Product, Category } from '../../models/product.model';
 
 @Component({
@@ -176,6 +177,7 @@ export class ProductsComponent implements OnInit {
     private productService: ProductService,
     private cartService: CartService,
     public wishlistService: WishlistService,
+    private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -234,6 +236,10 @@ export class ProductsComponent implements OnInit {
   // Add to cart — only called from the Cart button, stops propagation
   addToCart(p: any, e: Event): void {
     e.stopPropagation();
+    if (!this.authService.isLoggedIn()) {
+      this.showToast('Please sign in to add items to your cart.', true);
+      return;
+    }
     const pid = p.id || p._id;
     if (!pid) { this.showToast('Connect backend to add products!'); return; }
     this.cartService.addToCart({ product_id: pid, quantity: 1, size: 'M', color: '' }).subscribe({

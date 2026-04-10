@@ -4,6 +4,7 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
+import { AuthService } from '../../services/auth.service';
 import { Product } from '../../models/product.model';
 
 @Component({
@@ -153,7 +154,12 @@ export class ProductDetailComponent implements OnInit {
   toastMessage = '';
   toastError = false;
 
-  constructor(private productService: ProductService, private cartService: CartService, private route: ActivatedRoute) {}
+  constructor(
+    private productService: ProductService, 
+    private cartService: CartService, 
+    private authService: AuthService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -185,6 +191,10 @@ export class ProductDetailComponent implements OnInit {
 
   addToCart(): void {
     if (!this.product?.id) return;
+    if (!this.authService.isLoggedIn()) {
+      this.showToast('Please sign in to add items to your cart.', true);
+      return;
+    }
     this.cartService.addToCart({ product_id: (this.product.id || this.product._id) as string, quantity: this.qty, size: this.selectedSize, color: this.selectedColor }).subscribe({
       next: () => this.showToast(this.product!.name + ' added to cart! 🛍'),
       error: () => this.showToast('Failed to add to cart', true)

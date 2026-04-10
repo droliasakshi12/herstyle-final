@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
+import { AuthService } from '../../services/auth.service';
 import { Product, Category } from '../../models/product.model';
 
 @Component({
@@ -445,7 +446,7 @@ export class HomeComponent implements OnInit {
     { name: 'Ethnic Wear',  img: 'https://images.unsplash.com/photo-1581338834647-b0fb40704e21?w=400&q=80' },
     { name: 'Casuals',      img: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400&q=80' },
     { name: 'Party Wear',   img: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&q=80' },
-    { name: 'Accessories',  img: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=80' },
+    { name: 'Accessories',  img: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=400&q=80' },
   ];
 
   mockProducts = [
@@ -496,7 +497,12 @@ export class HomeComponent implements OnInit {
     { icon:'🔒', title:'Secure Payments', desc:'100% safe & encrypted checkout' },
   ];
 
-  constructor(private productService: ProductService, private cartService: CartService, private router: Router) {}
+  constructor(
+    private productService: ProductService, 
+    private cartService: CartService, 
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.productService.getCategories().subscribe({ next: (res) => { if (res.success) this.categories = res.data; } });
@@ -517,6 +523,10 @@ export class HomeComponent implements OnInit {
 
   quickAddToCart(product: any, e?: Event): void {
     if (e) e.stopPropagation();
+    if (!this.authService.isLoggedIn()) {
+      this.showToast('Please sign in to add items to your cart.', true);
+      return;
+    }
     const pid = product.id || product._id;
     if (!pid) return;
     this.cartService.addToCart({ product_id: pid, quantity: 1, size: 'M', color: '' }).subscribe({

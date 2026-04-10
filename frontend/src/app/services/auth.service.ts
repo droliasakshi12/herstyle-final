@@ -44,6 +44,24 @@ export class AuthService {
     });
   }
 
+  /** Manual login with email and password (for Admin or testing) */
+  login(email: string, password: string): Promise<AuthUser> {
+    return new Promise((resolve, reject) => {
+      this.http
+        .post<{ success: boolean; token: string; user: AuthUser }>(
+          `${environment.apiUrl}/auth/login`,
+          { email, password }
+        )
+        .subscribe({
+          next: (res) => {
+            this.setSession(res.token, res.user);
+            resolve(res.user);
+          },
+          error: (err) => reject(err),
+        });
+    });
+  }
+
   logout() {
     // Optionally call backend logout endpoint
     const token = this._token();

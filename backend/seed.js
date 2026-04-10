@@ -17,15 +17,15 @@ async function seed() {
 
     // ── CATEGORIES ──────────────────────────────────────────────────
     const catDefs = [
-      { name:'Casuals',      description:'Comfortable everyday fashion for every woman',        image_url:'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400&q=80' },
-      { name:'Formals',      description:'Sharp and professional outfits for the workplace',    image_url:'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&q=80' },
-      { name:'Western',      description:'Trendy western styles — dresses, tops and more',      image_url:'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80' },
+      { name:'Casuals',      description:'Comfortable everyday fashion for every woman',        image_url:'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80' },
+      { name:'Formals',      description:'Sharp and professional outfits for the workplace',    image_url:'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80' },
+      { name:'Western',      description:'Trendy western styles — dresses, tops and more',      image_url:'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=400&q=80' },
       { name:'Ethnic',       description:'Kurtas, salwars, sarees and Indian fusion wear',      image_url:'https://images.unsplash.com/photo-1572804013427-4d7ca7268217?w=400&q=80' },
-      { name:'Traditional',  description:'Classic traditional wear for festivals and weddings', image_url:'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80' },
-      { name:'Party Wear',   description:'Glam and glamorous outfits for special occasions',    image_url:'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80' },
-      { name:'Dresses',      description:'Elegant and casual dresses for every occasion',       image_url:'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400&q=80' },
-      { name:'Tops',         description:'Trendy tops, blouses and shirts',                     image_url:'https://images.unsplash.com/photo-1551803091-e20673f15770?w=400&q=80' },
-      { name:'Accessories',  description:'Jewellery, bags, scarves and more',                   image_url:'https://images.unsplash.com/photo-1554412933-514a83d2f3c8?w=400&q=80' },
+      { name:'Traditional',  description:'Classic traditional wear for festivals and weddings', image_url:'https://images.unsplash.com/photo-1583391099995-99218ee73b87?w=400&q=80' },
+      { name:'Party Wear',   description:'Glam and glamorous outfits for special occasions',    image_url:'https://images.unsplash.com/photo-1566174181878-d4d4b9c1d265?w=400&q=80' },
+      { name:'Dresses',      description:'Elegant and casual dresses for every occasion',       image_url:'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80' },
+      { name:'Tops',         description:'Trendy tops, blouses and shirts',                     image_url:'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=400&q=80' },
+      { name:'Accessories',  description:'Jewellery, bags, scarves and more',                   image_url:'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=400&q=80' },
     ];
 
     const savedCats = await Category.insertMany(catDefs);
